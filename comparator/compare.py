@@ -1,6 +1,8 @@
+import difflib
 import filecmp
 import json
 import os
+
 
 
 def are_dir_trees_equal(dir1, dir2):
@@ -36,6 +38,7 @@ def are_dir_trees_equal(dir1, dir2):
 
 class Compare:
     """Class to compare 2 directories, saying what they have in common and what they have different """
+    
     def __init__(self, dir_1, dir_2):
         """Constructor of the class"""
         self.path_dir_1 = dir_1
@@ -54,29 +57,60 @@ class Compare:
         return json.dumps(file_json)
     def cmp_init(self):
         """Function that init a new comparision"""
-        dirs_cmp = filecmp.dircmp(self.path_dir_1, self.path_dir_2)
-        equal_files = dirs_cmp.same_files
-        diff_files = dirs_cmp.diff_files   
-        equal_files_json = self.equal_files_to_json(equal_files, self.path_dir_1, self.path_dir_2)
-        print '{"table":'
-        for eq in equal_files_json:
-            print eq
-            print ','
-        print '{ }'
-        print '}'
+        self.cmp_directories(self.path_dir_1, self.path_dir_2)
+        
     def equal_files_to_json(self, equal_files,path_dir_1,path_dir_2):
         """functions that return a list of json, which contains """
         equal_files_json = []
         for fl in equal_files:
             file_path = os.path.join(path_dir_1, fl)
-            file_info = os.path.getsize(file_path)
-            equal_files_json.append(self.cmp_files_to_json(file_path, True, True, file_info, True, None))
+            file_size = os.path.getsize(file_path)
+            equal_files_json.append(self.cmp_files_to_json(file_path, True, True, file_size, True, None))
         return equal_files_json
 
+    def diff_files_to_json(self, diff_files,path_dir_1,path_dir_2):
+        """functions that return a list of json, which contains """
+        diff_files_json = []
+        for fl in diff_files:
+            file_path_1 = os.path.join(path_dir_1, fl)
+            file_path_2 = os.path.join(path_dir_2, fl)
+            file_size = os.path.getsize(file_path_1)
+            
+            with open(file_path_1) as file_1:
+                with open(file_path_2) as file_2:
+                    d = difflib.Differ()
+                    diff = list(d.compare(file_1.readlines(), file_2.readlines()))
+                    with open('diff.txt', 'w') as diff_file:
+                        _diff = ''.join(diff)
+                        diff_file.write(_diff)
+
+                        ## access by indice :(
+
+            #diff_report = os.popen('diff ' + file_path_1 + ' ' + file_path_2 ).read()
+            #print '------------------------->' + diff_report
+            #diff_files_json.append(self.cmp_files_to_json(file_path_1, True, True, file_size, True, diff_report))
+        return diff_files_json
+
     def cmp_files(self,file_1='./',file_2='./'):
-        """function that return the report of compare file_1 and file_2"""
+        """function that receive 2 path of files and return the report of compare both"""
 
         return json.dumps(self.cmp_files_to_json('hi', './', './', 1024, 'yes', None))
+
+    def cmp_directories(self, dir_1='./',dir_2='./' ):
+        """function that receive 2 path of directories and return the report of compare both in a json"""
+        dirs_cmp = filecmp.dircmp(dir_1, dir_2)
+        equal_files = dirs_cmp.same_files
+        diff_files = dirs_cmp.diff_files  
+        common_dir = dirs_cmp.common_dirs
+
+        equal_files_json = self.equal_files_to_json(equal_files, dir_1, dir_2)
+        diff_files_json = self.diff_files_to_json(diff_files, dir_1, dir_2)
+        print equal_files_json 
+        print diff_files_json
+        for common_dir in dirs_cmp.common_dirs:
+            new_dir_1 = os.path.join(dir_1, common_dir)
+            new_dir_2 = os.path.join(dir_2, common_dir)
+
 if __name__== "__main__":
     compare = Compare("../../inst/usr/local/rti_connext_dds-5.3.0/include/ndds", '../../rti_connext_dds-5.3.0/include/ndds')
   
