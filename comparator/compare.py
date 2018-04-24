@@ -43,8 +43,12 @@ class Compare:
         """Constructor of the class"""
         self.path_dir_1 = dir_1
         self.path_dir_2 = dir_2
-    #def directory_to_json(self, path, list_in ):
-          
+
+    def directory_to_json(self, path, list_in ):
+        """Function that create a json with the report of compare the content of both directories """
+        path_string='{"' + path + '" :' + json.dumps(list_in) + '}'
+        print path_string
+
     def cmp_files_to_json(self, path, in_dir_1, in_dir_2, size_1, size_2, equal, diff):
         """Function that create a json with the report of compare the file in 'path' inside the both directories """
         file_json = {   
@@ -125,7 +129,8 @@ class Compare:
         equal_files_json = self.equal_files_to_json(dirs_cmp.same_files, dir_1, dir_2)
         diff_files_json = self.diff_files_to_json(dirs_cmp.diff_files, dir_1, dir_2)
         only_in_one_json = self.only_in_one_to_json(dir_1, dirs_cmp.left_only, dir_2, dirs_cmp.right_only)
-        
+        self.directory_to_json(dir_1,list(equal_files_json + diff_files_json + only_in_one_json))
+        """
         print '['
         print json.dumps(equal_files_json)
         print ','
@@ -133,6 +138,8 @@ class Compare:
         print ','
         print json.dumps(only_in_one_json)
         print ']'
+        """
+        #print '[' + json.dumps(list(equal_files_json + diff_files_json + only_in_one_json))+']'
         
         
 
