@@ -44,15 +44,32 @@ class Compare:
         self.path_dir_1 = dir_1
         self.path_dir_2 = dir_2
 
+        #TO-DO possibly it is more correct to use an enum
+        self.dir = "directory"
+        self.file = "file"
+        self.link = "link"
+
+    def get_type(self, path):
+
+        #TO-DO try
+        if os.path.isfile(path):
+            return self.file
+        elif os.path.isdir(path):
+            return self.dir
+        else:
+            return self.link
+
     def directory_to_json(self, path, list_in ):
         """Function that create a json with the report of compare the content of both directories """
-        path_string='{"' + path + '" :' + json.dumps(list_in) + '}'
-        print path_string
+        directory_json='{"base_path":"' + path + '","files":' + json.dumps(list_in) + '}'
+        return directory_json
 
-    def cmp_files_to_json(self, path, in_dir_1, in_dir_2, size_1, size_2, equal, diff):
+    def cmp_files_to_json(self, path, type_, in_dir_1, in_dir_2, size_1, size_2, equal, diff):
         """Function that create a json with the report of compare the file in 'path' inside the both directories """
+
         file_json = {   
-                        "path:" : path, 
+                        "name" : path, #path of the file/directory after the base path
+                        "type" : type_, # file, directory or link
                         "in_dir_1" : in_dir_1,
                         "in_dir_2" : in_dir_2,
                         "size_1" : size_1,
@@ -65,18 +82,18 @@ class Compare:
         """Function that init a new comparision"""
         self.cmp_directories(self.path_dir_1, self.path_dir_2)
         
-    def equal_files_to_json(self, equal_files,path_dir_1,path_dir_2):
-        """Functions that return a list of json, which contains """
+    def equal_files_to_json(self, equal_files, path_dir_1, path_dir_2):
+        """Functions that return a list of json, which contains equal files report"""
         equal_files_json = []
         for fl in equal_files:
             file_path = os.path.join(path_dir_1, fl)
             file_size_1 = os.path.getsize(file_path)
             file_size_2 = os.path.getsize(os.path.join(path_dir_2, fl))
-            equal_files_json.append(self.cmp_files_to_json(file_path, True, True, file_size_1, file_size_2, True, None))
+            equal_files_json.append(self.cmp_files_to_json(file_path[len(self.path_dir_1):], self.file, True, True, file_size_1, file_size_2, True, None))
         return equal_files_json
 
-    def diff_files_to_json(self, diff_files,path_dir_1,path_dir_2):
-        """Functions that return a list of json, which contains """
+    def diff_files_to_json(self, diff_files, path_dir_1, path_dir_2):
+        """Functions that return a list of json, which contains diff files report """
         diff_files_json = []
         for fl in diff_files:
             file_path_1 = os.path.join(path_dir_1, fl)
@@ -85,7 +102,7 @@ class Compare:
             file_size_2 = os.path.getsize(os.path.join(path_dir_2, fl))
             
             diff_report = self.make_diff(file_path_1, file_path_2)
-            diff_files_json.append(self.cmp_files_to_json(file_path_1, True, True, file_size_1, file_size_2, False, diff_report))
+            diff_files_json.append(self.cmp_files_to_json(file_path_1[len(self.path_dir_1):], self.file, True, True, file_size_1, file_size_2, False, diff_report))
 
         return diff_files_json
 
@@ -111,15 +128,21 @@ class Compare:
             file_path_1 = os.path.join(path_dir_1, fl)
             file_size_1 = os.path.getsize(file_path_1)
             
-            only_in_one_json.append(self.cmp_files_to_json(file_path_1, True, False, file_size_1, None, False, None))
+            only_in_one_json.append(self.cmp_files_to_json(file_path_1[len(self.path_dir_1):], self.file, True, False, file_size_1, None, False, None))
 
         for fl in list_in_2:
             file_path_2 = os.path.join(path_dir_2, fl)
             file_size_2 = os.path.getsize(file_path_2)
             
-            only_in_one_json.append(self.cmp_files_to_json(file_path_2, False, True, None, file_size_2, False, None))
+            only_in_one_json.append(self.cmp_files_to_json(file_path_2[len(self.path_dir_2):], self.file, False, True, None, file_size_2, False, None))
 
         return  only_in_one_json
+
+    def common_dirs_to_json(self, list_common_dirs, path_dir_1, path_dir_2):
+        """Functions that return a list of json, which contains diff files report """
+        for directory in dirs_cmp.common_dirs:
+            (_, mismatch, errors) =  filecmp.cmpfiles(os.path.join(dir_1, directory),  os.path.join(dir_2, directory), dirs_cmp.common_files, shallow=False)
+            #if len(mismatch)>0 or len(errors)>0:
 
     def cmp_directories(self, dir_1='./',dir_2='./' ):
         """Function that receive 2 path of directories and return the report of compare both in a json"""
@@ -129,7 +152,9 @@ class Compare:
         equal_files_json = self.equal_files_to_json(dirs_cmp.same_files, dir_1, dir_2)
         diff_files_json = self.diff_files_to_json(dirs_cmp.diff_files, dir_1, dir_2)
         only_in_one_json = self.only_in_one_to_json(dir_1, dirs_cmp.left_only, dir_2, dirs_cmp.right_only)
-        self.directory_to_json(dir_1,list(equal_files_json + diff_files_json + only_in_one_json))
+        
+
+        print self.directory_to_json(dir_1,list(equal_files_json + diff_files_json + only_in_one_json))
         """
         print '['
         print json.dumps(equal_files_json)
