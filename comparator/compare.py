@@ -55,7 +55,7 @@ class Compare:
 
     def directory_to_json(self, path, list_in ):
         """Function that create a json with the report of compare the content of both directories """
-        directory_json='{"base_path":"' + path + '","files":' + str(list_in) + '}'
+        directory_json={"base_path": path ,"files": list_in }
         #print "base_path : " + path
         return directory_json
 
@@ -72,10 +72,13 @@ class Compare:
                         "equal" : equal,
                         "diff" : diff
                     }  
-        return json.dumps(file_json)
+        return json.loads(json.dumps(file_json))
+
     def cmp_init(self):
         """Function that init a new comparision"""
-        print self.cmp_directories(self.path_dir_1, self.path_dir_2)
+        caca = json.loads(json.dumps(self.cmp_directories(self.path_dir_1, self.path_dir_2)))
+        print json.dumps(caca)
+        #print self.cmp_directories(self.path_dir_1, self.path_dir_2)
         #self.cmp_directories(self.path_dir_1, self.path_dir_2)
         
     def equal_files_to_json(self, equal_files, path_dir_1, path_dir_2):
@@ -163,7 +166,7 @@ class Compare:
         for dir_ in common_dirs:
             dir_path_1 = os.path.join(path_dir_1, dir_)
             dir_path_2 = os.path.join(path_dir_2, dir_)
-            list_dirs_json.append(self.cmp_directories(dir_path_1, dir_path_2))
+            list_dirs_json = list_dirs_json + self.cmp_directories(dir_path_1, dir_path_2)
 
         return list_dirs_json
 
@@ -177,21 +180,21 @@ class Compare:
         only_in_one_json = self.only_in_one_to_json(dir_1, dirs_cmp.left_only, dir_2, dirs_cmp.right_only)
         common_dirs_json = self.common_dirs_to_json(dirs_cmp.common_dirs, dir_1, dir_2)
 
-        all_lists_json = list(equal_files_json + diff_files_json + only_in_one_json + common_dirs_json)
+        all_lists_json = json.loads(json.dumps(list(equal_files_json + diff_files_json + only_in_one_json + common_dirs_json)))
         #print self.directory_to_json(dir_1,list(equal_files_json + diff_files_json + only_in_one_json))
         #list_dirs_json.append(self.directory_to_json(dir_1, all_lists_json))
-
-        list_dirs_json = self.internal_directories_json(dir_1, dir_2, dirs_cmp.common_dirs)
+        if dirs_cmp.common_dirs: 
+            list_dirs_json = self.internal_directories_json(dir_1, dir_2, dirs_cmp.common_dirs)
         list_dirs_json.append(self.directory_to_json(dir_1,all_lists_json))
 
-        return json.dumps(list_dirs_json)
+        return list_dirs_json
   
         
         
         
 
 if __name__== "__main__":
-    compare = Compare("../../inst/usr/local/rti_connext_dds-5.3.0/include/ndds", '../../rti_connext_dds-5.3.0/include/ndds')
+    compare = Compare("/home/juanca/task/inst/usr/local/rti_connext_dds-5.3.0/include/ndds", '/home/juanca/task/rti_connext_dds-5.3.0/include/ndds')
   
      #print (compare.cmp_files(compare.path_dir_1,compare.path_dir_2)  )
     compare.cmp_init()
