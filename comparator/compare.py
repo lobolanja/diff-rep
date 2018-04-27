@@ -2,6 +2,54 @@ import difflib
 import filecmp
 import json
 import os
+from jinja2 import Template
+
+NL='\n'
+
+class Compare_to_md:
+    """Class that receive a compare report and convert it to a MarkDown format"""
+    def __init__(self, dir_1, dir_2, inform, file_="report.md"):
+        self.h1 = Template('# {{title}}')
+        self.h2 = Template('''
+## {{text}}''')
+        self.table_head = Template(
+            '''
+{% for key in dict_.keys() -%}
+{{key}} | {% endfor %}''')
+        self.table_line = Template(
+            '''
+{% for key in dict_.keys() -%}
+--- | {% endfor %}''')
+        self.table_row = Template(
+            '''
+{% for value in dict_.values() -%}
+{{value}} | {% endfor %}''')
+            
+        self.h2_ = Template(
+            '''{% for path in dict_.keys() %}
+
+## {{path}}
+                {% endfor %}
+            ''')
+        self.path_dir_1 = dir_1
+        self.path_dir_2 = dir_2
+        self.inform = inform 
+
+        md = self.create_md(file_)
+        self.write_report(md)
+
+    def write_report(self, md,):
+        md.write(self.h1.render(title="REPORT OF COMPARE "+ self.path_dir_1 + " AND " + self.path_dir_2 + NL ))
+        for path in self.inform.keys() :
+            md.write(self.h2.render(text = path + NL))
+            md.write(self.table_head.render(dict_= self.inform[path]['files'][0]))
+            md.write(self.table_line.render(dict_= self.inform[path]['files'][0]))
+            for kk in self.inform[path]['files']:
+                md.write(self.table_row.render(dict_= kk))
+                str(kk) + NL
+
+    def create_md(self, file_):
+        return open(file_, 'w')
 
 class Compare:
     """Class to compare 2 directories, saying what they have in common and what they have different """
@@ -15,6 +63,15 @@ class Compare:
         self.dir = "directory"
         self.file = "file"
         self.link = "link"
+        
+
+    def cmp_init(self):
+        """Function that init a new comparision"""
+        caca = json.loads(json.dumps(self.cmp_directories(self.path_dir_1, self.path_dir_2),sort_keys=True))
+        self.report=Compare_to_md(self.path_dir_1, self.path_dir_2, caca)
+        #print json.dumps(caca,sort_keys=True)
+        #print self.cmp_directories(self.path_dir_1, self.path_dir_2)
+        #self.cmp_directories(self.path_dir_1, self.path_dir_2)
 
     def get_type(self, path):
 
@@ -63,23 +120,16 @@ class Compare:
         """Function that create a json with the report of compare the file in 'path' inside the both directories """
 
         file_json = {   
-                        "name" : path, #path of the file/directory after the base path
+                        "aname" : path, #path of the file/directory after the base path
                         "type" : type_, # file, directory or link
                         "in_dir_1" : in_dir_1,
                         "in_dir_2" : in_dir_2,
                         "size_1" : size_1,
                         "size_2" : size_2,
                         "equal" : equal,
-                        "diff" : diff
+                        #"diff" : diff
                     }  
-        return json.loads(json.dumps(file_json))
-
-    def cmp_init(self):
-        """Function that init a new comparision"""
-        caca = json.loads(json.dumps(self.cmp_directories(self.path_dir_1, self.path_dir_2)))
-        print json.dumps(caca)
-        #print self.cmp_directories(self.path_dir_1, self.path_dir_2)
-        #self.cmp_directories(self.path_dir_1, self.path_dir_2)
+        return json.loads(json.dumps(file_json, sort_keys=True))
         
     def equal_files_to_json(self, equal_files, path_dir_1, path_dir_2):
         """Functions that return a list of json, which contains equal files report"""
@@ -126,14 +176,19 @@ class Compare:
         for fl in list_in_1:
             file_path_1 = os.path.join(path_dir_1, fl)
             file_size_1 = os.path.getsize(file_path_1)
-            
-            only_in_one_json.append(self.cmp_files_to_json(file_path_1, self.get_type(file_path_1), True, False, file_size_1, None, False, None))
+            type_ = self.get_type(file_path_1)
+            if (type_ == self.dir):
+                file_size_1 = None
+            only_in_one_json.append(self.cmp_files_to_json(file_path_1, type_ , True, False, file_size_1, None, False, None))
 
         for fl in list_in_2:
             file_path_2 = os.path.join(path_dir_2, fl)
             file_size_2 = os.path.getsize(file_path_2)
+            type_ = self.get_type(file_path_2)
+            if (type_ == self.dir):
+                file_size_2 = None
             
-            only_in_one_json.append(self.cmp_files_to_json(file_path_2, self.get_type(file_path_2), False, True, None, file_size_2, False, None))
+            only_in_one_json.append(self.cmp_files_to_json(file_path_2, type_ , False, True, None, file_size_2, False, None))
 
         return  only_in_one_json
 
@@ -161,31 +216,31 @@ class Compare:
 
     def internal_directories_json(self,path_dir_1, path_dir_2, common_dirs):
         """"""
-        list_dirs_json = []
+        list_dirs_json = {}
 
         for dir_ in common_dirs:
             dir_path_1 = os.path.join(path_dir_1, dir_)
             dir_path_2 = os.path.join(path_dir_2, dir_)
-            list_dirs_json = list_dirs_json + self.cmp_directories(dir_path_1, dir_path_2)
+            list_dirs_json.update(self.cmp_directories(dir_path_1, dir_path_2))
 
         return list_dirs_json
 
     def cmp_directories(self, dir_1='./',dir_2='./' ):
         """Function that receive 2 path of directories and return the report of compare both in a json"""
         dirs_cmp = filecmp.dircmp(dir_1, dir_2)
-        list_dirs_json = []
+        list_dirs_json = dict()
 
         equal_files_json = self.equal_files_to_json(dirs_cmp.same_files, dir_1, dir_2)
         diff_files_json  = self.diff_files_to_json(dirs_cmp.diff_files, dir_1, dir_2)
         only_in_one_json = self.only_in_one_to_json(dir_1, dirs_cmp.left_only, dir_2, dirs_cmp.right_only)
         common_dirs_json = self.common_dirs_to_json(dirs_cmp.common_dirs, dir_1, dir_2)
 
-        all_lists_json = json.loads(json.dumps(list(equal_files_json + diff_files_json + only_in_one_json + common_dirs_json)))
+        all_lists_json = json.loads(json.dumps(list(equal_files_json + diff_files_json + only_in_one_json + common_dirs_json),sort_keys=True))
         #print self.directory_to_json(dir_1,list(equal_files_json + diff_files_json + only_in_one_json))
         #list_dirs_json.append(self.directory_to_json(dir_1, all_lists_json))
         if dirs_cmp.common_dirs: 
             list_dirs_json = self.internal_directories_json(dir_1, dir_2, dirs_cmp.common_dirs)
-        list_dirs_json.append(self.directory_to_json(dir_1,all_lists_json))
+        list_dirs_json.update(dict({dir_1 : self.directory_to_json(dir_1,all_lists_json)}))
 
         return list_dirs_json
   
