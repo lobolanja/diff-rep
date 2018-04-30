@@ -2,35 +2,31 @@ import difflib
 import filecmp
 import json
 import os
-from jinja2 import Template
+from jinja2 import Environment, PackageLoader, select_autoescape, Template
 
 NL='\n'
 
 class Compare_to_md:
     """Class that receive a compare report and convert it to a MarkDown format"""
-    def __init__(self, dir_1, dir_2, inform, file_="report.md"):
-        self.h1 = Template('# {{title}}')
-        self.h2 = Template('''
-## {{text}}''')
-        self.table_head = Template(
-            '''
-{% for key in dict_.keys() -%}
-{{key}} | {% endfor %}''')
-        self.table_line = Template(
-            '''
-{% for key in dict_.keys() -%}
---- | {% endfor %}''')
-        self.table_row = Template(
-            '''
-{% for value in dict_.values() -%}
-{{value}} | {% endfor %}''')
-            
-        self.h2_ = Template(
-            '''{% for path in dict_.keys() %}
+    def __init__(self, dir_1, dir_2, inform, file_="report.md"):   
+        self.complet_template = Template('''
+#REPORT OF COMPARE {{path_1}} AND {{path_2}}
 
+{% for path in inform.keys() %}
 ## {{path}}
-                {% endfor %}
-            ''')
+{% for key in inform[path]['files'][0].keys() -%}
+{{key}} | {% endfor -%}
+{% for key in inform[path]['files'][0].keys() -%}
+--- | {% endfor -%}
+{% for row in inform[path]['files'] -%}
+{% for value in row.values() -%}
+{% if value == False -%}
+<span style="color:red">{{value}}</span> | {% else -%} {{value}} | {% endif -%}
+{% endfor -%}
+{% endfor -%}
+{% endfor -%}        
+        ''')
+
         self.path_dir_1 = dir_1
         self.path_dir_2 = dir_2
         self.inform = inform 
@@ -39,15 +35,10 @@ class Compare_to_md:
         self.write_report(md)
 
     def write_report(self, md,):
-        md.write(self.h1.render(title="REPORT OF COMPARE "+ self.path_dir_1 + " AND " + self.path_dir_2 + NL ))
-        for path in self.inform.keys() :
-            md.write(self.h2.render(text = path + NL))
-            md.write(self.table_head.render(dict_= self.inform[path]['files'][0]))
-            md.write(self.table_line.render(dict_= self.inform[path]['files'][0]))
-            for kk in self.inform[path]['files']:
-                md.write(self.table_row.render(dict_= kk))
-                str(kk) + NL
-
+        env = Environment( loader=PackageLoader('compare', 'templates'))
+        template=env.get_template('md_template.jn2')
+        #md.write(self.complet_template.render(path_1=self.path_dir_1, path_2=self.path_dir_2, inform=self.inform))       
+        md.write(template.render(path_1=self.path_dir_1, path_2=self.path_dir_2, inform=self.inform))       
     def create_md(self, file_):
         return open(file_, 'w')
 
@@ -120,7 +111,7 @@ class Compare:
         """Function that create a json with the report of compare the file in 'path' inside the both directories """
 
         file_json = {   
-                        "aname" : path, #path of the file/directory after the base path
+                        "path" : path, #path of the file/directory after the base path
                         "type" : type_, # file, directory or link
                         "in_dir_1" : in_dir_1,
                         "in_dir_2" : in_dir_2,
@@ -249,7 +240,7 @@ class Compare:
         
 
 if __name__== "__main__":
-    compare = Compare("/home/juanca/task/inst/usr/local/rti_connext_dds-5.3.0/include/ndds", '/home/juanca/task/rti_connext_dds-5.3.0/include/ndds')
+    compare = Compare("/home/juanca/task/inst/usr/local/rti_connext_dds-5.3.0/include/", '/home/juanca/task/rti_connext_dds-5.3.0/include/')
   
      #print (compare.cmp_files(compare.path_dir_1,compare.path_dir_2)  )
     compare.cmp_init()
