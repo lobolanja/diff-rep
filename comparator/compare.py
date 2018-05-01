@@ -4,29 +4,9 @@ import json
 import os
 from jinja2 import Environment, PackageLoader, select_autoescape, Template
 
-NL='\n'
-
 class Compare_to_md:
     """Class that receive a compare report and convert it to a MarkDown format"""
     def __init__(self, dir_1, dir_2, inform, file_="report.md"):   
-        self.complet_template = Template('''
-#REPORT OF COMPARE {{path_1}} AND {{path_2}}
-
-{% for path in inform.keys() %}
-## {{path}}
-{% for key in inform[path]['files'][0].keys() -%}
-{{key}} | {% endfor -%}
-{% for key in inform[path]['files'][0].keys() -%}
---- | {% endfor -%}
-{% for row in inform[path]['files'] -%}
-{% for value in row.values() -%}
-{% if value == False -%}
-<span style="color:red">{{value}}</span> | {% else -%} {{value}} | {% endif -%}
-{% endfor -%}
-{% endfor -%}
-{% endfor -%}        
-        ''')
-
         self.path_dir_1 = dir_1
         self.path_dir_2 = dir_2
         self.inform = inform 
@@ -159,7 +139,10 @@ class Compare:
                     if(diff[i][0] == '+' or diff[i][0] == '-'):
                         _diff.append(diff[i])
 
-                return ''.join(_diff)
+                _diff = ''.join(_diff)
+                f = open('./diff', 'w')
+                f.write(_diff)
+                return _diff
 
     def only_in_one_to_json(self, path_dir_1, list_in_1, path_dir_2, list_in_2):
         """Functions that receive 2 path and 2 list of the files and directories that are only in the first path and in the second path respectively""" 
@@ -240,7 +223,7 @@ class Compare:
         
 
 if __name__== "__main__":
-    compare = Compare("/home/juanca/task/inst/usr/local/rti_connext_dds-5.3.0/include/", '/home/juanca/task/rti_connext_dds-5.3.0/include/')
+    compare = Compare("../../1", '../../2')
   
      #print (compare.cmp_files(compare.path_dir_1,compare.path_dir_2)  )
     compare.cmp_init()
