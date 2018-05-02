@@ -4,13 +4,20 @@
 ## {{path}}
 
 {% for key in inform[path]['files'][0].keys() -%}
-{{key}} | {% endfor %}
+{% if not loop.last -%}
+{{key}} | {% else -%}{{key}}{% endif -%}{% endfor %}
 {% for key in inform[path]['files'][0].keys() -%}
---- | {% endfor %}
+{% if not loop.last -%}
+--- | {% else -%}---{% endif -%}{% endfor %}
 {% for row in inform[path]['files'] -%}
 {% for value in row.values() -%}
+{% if not loop.last -%}
 {% if value == False -%}
 <span style="color:red">{{value}}</span> | {% else -%} {{value}} | {% endif -%}
+{% else -%}
+{% if value == False -%}
+<span style="color:red">{{value}}</span>{% else -%} {{value}}{% endif -%}
+{% endif -%}
 {% endfor %}
 {% endfor -%}
 {% endfor -%}
