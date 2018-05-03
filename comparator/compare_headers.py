@@ -8,10 +8,11 @@ import os
 import sys
 
 
-class compareHeaders:
+class CompareHeaders:
     """
-    Class to compare 2 directories, saying what they have in common and
-    what they have different
+    Class to compare 2 directories.
+
+    saying what they have in common and what they have different
     """
 
     def __init__(self, dir_1, dir_2):
@@ -68,8 +69,10 @@ class compareHeaders:
 
     def are_dir_trees_equal(self, dir_1, dir_2):
         """
-        Compare two directories recursively. Files in each directory are
-        assumed to be equal if their names and contents are equal.
+        Compare two directories recursively.
+
+        Files in each directory are assumed to be equal if their names and
+        contents are equal.
 
         @param dir1: First directory path
         @param dir2: Second directory path
@@ -77,7 +80,6 @@ class compareHeaders:
             there were no errors while accessing the directories or files,
             False otherwise.
         """
-
         dirs_cmp = filecmp.dircmp(dir_1, dir_2)
         if dirs_cmp.left_only or dirs_cmp.right_only or \
                 dirs_cmp.funny_files:
@@ -96,10 +98,7 @@ class compareHeaders:
         return True
 
     def directory_to_json(self, path, list_in):
-        """
-        Create a json with the report of compare the content
-        of both directories.
-        """
+        """Create a json with the report of compare both directories."""
         directory_json = {"base_path": path, "files": list_in}
         return directory_json
 
@@ -115,10 +114,10 @@ class compareHeaders:
                             diff
                         ):
         """
-        Create a json with the report of compare the file in
-        'path' inside the both directories
-        """
+        Create a json with the report.
 
+        Of compare the file in 'path' inside the both directories
+        """
         file_json = {
                         "path": path,
                         "type": type_,
@@ -202,9 +201,7 @@ class compareHeaders:
         return path
 
     def make_diff(self, file_path_1, file_path_2, path_in):
-        """Receive 2 path of files and return the diff report of compare
-        both.
-        """
+        """Receive 2 files and return the diff report of compare both."""
         hash_ = hash(path_in)
 
         with open(file_path_1) as file_1:
@@ -238,11 +235,7 @@ class compareHeaders:
                             list_in_1,
                             path_dir_2,
                             list_in_2):
-        """Receive 2 path and 2 list of the files and
-        directories that are only in the first path and in the second
-        path respectively
-        """
-
+        """Receive 2 path and 2 list of the files and directories."""
         only_in_one_json = []
         for fl in list_in_1:
             file_path_1 = os.path.join(path_dir_1, fl)
@@ -315,8 +308,9 @@ class compareHeaders:
 
     def cmp_directories(self, dir_1='./', dir_2='./'):
         """
-        Receive 2 path of directories and return the report of compare both
-        in a json.
+        Receive 2 path of directories.
+
+        return the report of compare both in a json.
         """
         dirs_cmp = filecmp.dircmp(dir_1, dir_2)
         list_dirs_json = dict()
@@ -368,11 +362,11 @@ class compareHeaders:
 
 if __name__ == "__main__":
     if len(sys.argv) == 3:
-        compare = Compare(sys.argv[1], sys.argv[2])
+        compare = CompareHeaders(sys.argv[1], sys.argv[2])
         compare.cmp_init()
     else:
         try:
-            compare = Compare(
+            compare = CompareHeaders(
                 "../../inst/usr/local/rti_connext_dds-5.3.0/include",
                 "../../rti_connext_dds-5.3.0/include"
                 )
